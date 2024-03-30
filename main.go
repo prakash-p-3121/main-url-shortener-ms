@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/prakash-p-3121/main-url-shortener-ms/cfg"
+	"github.com/prakash-p-3121/main-url-shortener-ms/controller/url_controller"
 
 	"github.com/prakash-p-3121/main-url-shortener-ms/database"
 	"github.com/prakash-p-3121/mysqllib"
@@ -36,15 +37,10 @@ func main() {
 	database.SetSingleStoreConnection(db)
 
 	router := gin.Default()
-	routerGroup := router.Group("/public")
-	routerGroup.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "pong",
-		})
-	})
+	router.GET("/:encoded-cipher", url_controller.FindLongUrl)
 
-	//routerGroup.POST("/v1/shorten_url", controller.ShortenUrl)
-	//routerGroup.GET("/v1/long_url", controller.FindLongUrl)
+	routerGroup := router.Group("/public")
+	routerGroup.POST("/v1/shorten_url", url_controller.ShortenUrl)
 
 	err = router.Run("127.0.0.1:3004")
 	if err != nil {

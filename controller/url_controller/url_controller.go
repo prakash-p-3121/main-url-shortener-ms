@@ -1,4 +1,4 @@
-package product_controller
+package url_controller
 
 import "github.com/prakash-p-3121/restlib"
 

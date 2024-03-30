@@ -1,4 +1,4 @@
-package product_controller
+package url_controller
 
 import (
 	"github.com/prakash-p-3121/main-url-shortener-ms/controller/url_controller/impl"
