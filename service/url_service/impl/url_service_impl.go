@@ -25,7 +25,8 @@ type UrlServiceImpl struct {
 }
 
 const (
-	shortUrlDomain = "https://infra.cloud/"
+	shortUrlDomain    string = "https://infra.cloud/"
+	encryptDecryptKey string = "HelloWorld@123"
 )
 
 func (service *UrlServiceImpl) ShortenUrl(req *url_model.ShortenUrlReq) (*url_model.ShortenUrlResp, errorlib.AppError) {
@@ -157,14 +158,13 @@ func (service *UrlServiceImpl) buildShortUrl(shortUrl *url_model.ShortUrl) (*url
 }
 
 func (service *UrlServiceImpl) encrypt(jsonData []byte) ([]byte, errorlib.AppError) {
-	key := []byte("your32ByteSecret!") // Replace with your actual key
-	iv := make([]byte, aes.BlockSize)  // Random initialization vector
+	iv := make([]byte, aes.BlockSize) // Random initialization vector
 	_, err := rand.Read(iv)
 	if err != nil {
 		return nil, errorlib.NewInternalServerError(err.Error())
 	}
 
-	block, err := aes.NewCipher(key)
+	block, err := aes.NewCipher([]byte(encryptDecryptKey))
 	if err != nil {
 		return nil, errorlib.NewInternalServerError(err.Error())
 	}
@@ -177,4 +177,67 @@ func (service *UrlServiceImpl) encrypt(jsonData []byte) ([]byte, errorlib.AppErr
 	cipherText := gcm.Seal(nil, iv, plainText, nil)
 	log.Println("cipherText=", cipherText)
 	return cipherText, nil
+}
+
+func (service *UrlServiceImpl) FindLongUrl(encodedShortUrl *string) (*url_model.FindLongUrlResp, errorlib.AppError) {
+	cipherText, err := base64.URLEncoding.DecodeString(*encodedShortUrl)
+	if err != nil {
+		return nil, errorlib.NewInternalServerError(err.Error())
+	}
+	cipherStr := string(cipherText)
+	plainText, appErr := service.decrypt(&cipherStr)
+	if appErr != nil {
+		return nil, appErr
+	}
+	var components url_model.ShortUrlComponents
+	err = json.Unmarshal(plainText, &components)
+	if err != nil {
+		return nil, errorlib.NewInternalServerError(err.Error())
+	}
+
+	databaseClstrMgtMsCfg, err := cfg.GetMsConnectionCfg("database-clustermgt-ms")
+	if err != nil {
+		return nil, errorlib.NewInternalServerError(err.Error())
+	}
+
+	client := database_clustermgt_client.NewDatabaseClusterMgtClient(databaseClstrMgtMsCfg.Host,
+		uint(databaseClstrMgtMsCfg.Port))
+
+	shardPtr, appErr := client.FindShard(database.ShortUrlsTable, components.ID)
+	if appErr != nil {
+		return nil, appErr
+	}
+
+	shortUrl, appErr := service.UrlRepository.FindShortUrlByID(shardPtr.ID, components.ID)
+	if appErr != nil {
+		return nil, appErr
+	}
+	if shortUrl.LongUrlHash != components.UrlHash {
+		return nil, errorlib.NewNotFoundError("long-url")
+	}
+	resp := url_model.FindLongUrlResp{LongUrl: shortUrl.LongUrl}
+	return &resp, nil
+}
+
+func (service *UrlServiceImpl) decrypt(cipherStr *string) ([]byte, errorlib.AppError) {
+	cipherText := *cipherStr
+	iv := cipherText[:aes.BlockSize] // Extract initialization vector (IV)
+	cipherText = cipherText[aes.BlockSize:]
+
+	block, err := aes.NewCipher([]byte(encryptDecryptKey))
+	if err != nil {
+		return nil, errorlib.NewInternalServerError(err.Error())
+	}
+
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, errorlib.NewInternalServerError(err.Error())
+	}
+
+	plainText, err := gcm.Open(nil, []byte(iv), []byte(cipherText), nil)
+	if err != nil {
+		return nil, errorlib.NewInternalServerError(err.Error())
+	}
+	log.Println("decrypted plain text=", plainText)
+	return plainText, nil
 }

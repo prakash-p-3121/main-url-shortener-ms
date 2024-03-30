@@ -22,3 +22,7 @@ func (req *ShortenUrlReq) Validate() errorlib.AppError {
 type ShortenUrlResp struct {
 	ShortUrl string `json:"short-url"`
 }
+
+type FindLongUrlResp struct {
+	LongUrl string `json:"long-url"`
+}
