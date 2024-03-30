@@ -10,4 +10,6 @@ type UrlRepository interface {
 	CreateLongUrlToShortUrlIDMapping(shardID *int64, longUrl, shortUrlID *string) errorlib.AppError
 	FindShortUrlIDByLongUrl(shardID *int64, longUrl *string) (string, errorlib.AppError)
 	FindShortUrlByID(shardID *int64, shortUrlID string) (*url_model.ShortUrl, errorlib.AppError)
+	IncrShortenedDomainCount(domain *string) errorlib.AppError
+	FindTopDomains(count uint64) ([]*url_model.DomainCount, errorlib.AppError)
 }

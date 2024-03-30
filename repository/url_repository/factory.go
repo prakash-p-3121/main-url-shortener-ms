@@ -6,5 +6,8 @@ import (
 )
 
 func NewUrlRepository() UrlRepository {
-	return &impl.UrlRepositoryImpl{ShardConnectionsMap: database.GetShardConnectionsMap()}
+	return &impl.UrlRepositoryImpl{
+		ShardConnectionsMap:   database.GetShardConnectionsMap(),
+		SingleStoreConnection: database.GetSingleStoreConnection(),
+	}
 }

@@ -8,5 +8,5 @@ import (
 type UrlService interface {
 	ShortenUrl(req *url_model.ShortenUrlReq) (*url_model.ShortenUrlResp, errorlib.AppError)
 	FindLongUrl(urlHash *string) (*url_model.FindLongUrlResp, errorlib.AppError)
-	//FindTopShortenedDomains(ctx restlib.RestContext)
+	FindTopDomains(count uint64) ([]*url_model.DomainCount, errorlib.AppError)
 }

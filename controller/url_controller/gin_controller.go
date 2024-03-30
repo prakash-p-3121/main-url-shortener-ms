@@ -16,3 +16,9 @@ func FindLongUrl(c *gin.Context) {
 	controller := NewUrlController()
 	controller.FindLongUrl(ginRestCtx)
 }
+
+func FindTopDomains(c *gin.Context) {
+	ginRestCtx := restlib.NewGinRestContext(c)
+	controller := NewUrlController()
+	controller.FindTopDomains(ginRestCtx)
+}

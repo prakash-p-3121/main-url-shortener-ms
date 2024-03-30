@@ -15,6 +15,7 @@ import (
 	"github.com/prakash-p-3121/main-url-shortener-ms/model/url_model"
 	"github.com/prakash-p-3121/main-url-shortener-ms/repository/url_repository"
 	"log"
+	"net/url"
 	"strings"
 )
 
@@ -111,7 +112,6 @@ func (service *UrlServiceImpl) ShortenUrl(req *url_model.ShortenUrlReq) (*url_mo
 	if appErr != nil {
 		return nil, appErr
 	}
-
 	appErr = service.UrlRepository.CreateLongUrlToShortUrlIDMapping(shardPtr.ID,
 		&shortUrl.LongUrl,
 		&shortUrl.ID)
@@ -119,7 +119,25 @@ func (service *UrlServiceImpl) ShortenUrl(req *url_model.ShortenUrlReq) (*url_mo
 		return nil, appErr
 	}
 
+	shortenedUrlDomain, err := service.findDomain(req.LongUrl)
+	if err != nil {
+		return nil, errorlib.NewInternalServerError(err.Error())
+	}
+	log.Println("shortened url domain= " + shortenedUrlDomain)
+	appErr = service.UrlRepository.IncrShortenedDomainCount(&shortenedUrlDomain)
+	if appErr != nil {
+		return nil, appErr
+	}
+
 	return shortUrlResp, nil
+}
+
+func (service *UrlServiceImpl) findDomain(urlStr *string) (string, error) {
+	parsedUrl, err := url.Parse(*urlStr)
+	if err != nil {
+		return "", err
+	}
+	return parsedUrl.Hostname(), nil
 }
 
 func (service *UrlServiceImpl) findLongUrlShardKey(longUrl *string) string {
@@ -241,4 +259,12 @@ func (service *UrlServiceImpl) FindLongUrl(encodedShortUrl *string) (*url_model.
 	resp := url_model.FindLongUrlResp{LongUrl: shortUrl.LongUrl}
 
 	return &resp, nil
+}
+
+func (service *UrlServiceImpl) FindTopDomains(count uint64) ([]*url_model.DomainCount, errorlib.AppError) {
+	if count == 0 {
+		badReqErr := errorlib.NewBadReqError("count==0")
+		return nil, badReqErr
+	}
+	return service.UrlRepository.FindTopDomains(count)
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/prakash-p-3121/main-url-shortener-ms/model/url_model"
 	"github.com/prakash-p-3121/main-url-shortener-ms/service/url_service"
 	"github.com/prakash-p-3121/restlib"
+	"strconv"
 )
 
 type UrlControllerImpl struct {
@@ -58,6 +59,32 @@ func (controller *UrlControllerImpl) FindLongUrl(restCtx restlib.RestContext) {
 	restlib.OkResponse(ctx, resp)
 }
 
-func (controller *UrlControllerImpl) FindTopDomains(ctx restlib.RestContext) {
+func (controller *UrlControllerImpl) FindTopDomains(restCtx restlib.RestContext) {
+	ginRestCtx, ok := restCtx.(*restlib.GinRestContext)
+	if !ok {
+		internalServerErr := errorlib.NewInternalServerError("Expected GinRestContext")
+		internalServerErr.SendRestResponse(ginRestCtx.CtxGet())
+		return
+	}
+	ctx := ginRestCtx.CtxGet()
+	countStr := ctx.Query("count")
+	if restlib.TrimAndCheckForEmptyString(&countStr) {
+		badReqErr := errorlib.NewBadReqError("count-empty")
+		badReqErr.SendRestResponse(ctx)
+		return
+	}
 
+	count, err := strconv.ParseUint(countStr, 10, 32)
+	if err != nil {
+		badReqErr := errorlib.NewBadReqError("count-invalid-integer")
+		badReqErr.SendRestResponse(ctx)
+		return
+	}
+
+	domainList, appErr := controller.UrlService.FindTopDomains(count)
+	if appErr != nil {
+		appErr.SendRestResponse(ctx)
+		return
+	}
+	restlib.OkResponse(ctx, domainList)
 }

@@ -3,6 +3,7 @@ package impl
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"github.com/prakash-p-3121/errorlib"
 	"github.com/prakash-p-3121/main-url-shortener-ms/model/url_model"
 	"github.com/prakash-p-3121/mysqllib"
@@ -11,7 +12,8 @@ import (
 )
 
 type UrlRepositoryImpl struct {
-	ShardConnectionsMap *sync.Map
+	ShardConnectionsMap   *sync.Map
+	SingleStoreConnection *sql.DB
 }
 
 func (repository *UrlRepositoryImpl) CreateShortUrl(shardID *int64, req *url_model.ShortUrl) errorlib.AppError {
@@ -84,4 +86,35 @@ func (repository *UrlRepositoryImpl) FindShortUrlByID(shardID *int64, shortUrlID
 		return nil, errorlib.NewInternalServerError(err.Error())
 	}
 	return &shortUrl, nil
+}
+
+func (repository *UrlRepositoryImpl) IncrShortenedDomainCount(domain *string) errorlib.AppError {
+	db := repository.SingleStoreConnection
+	qry := `INSERT INTO domain_shortening_counts (long_url_domain, shortening_count) VALUES (?, ?) 
+            ON DUPLICATE KEY UPDATE shortening_count=shortening_count+1 ;`
+	_, err := db.Exec(qry, domain, 1)
+	if err != nil {
+		return errorlib.NewInternalServerError(err.Error())
+	}
+	return nil
+}
+
+func (repository *UrlRepositoryImpl) FindTopDomains(count uint64) ([]*url_model.DomainCount, errorlib.AppError) {
+	db := repository.SingleStoreConnection
+	qry := "SELECT long_url_domain, shortening_count FROM domain_shortening_counts ORDER BY shortening_count DESC LIMIT %d ;"
+	qry = fmt.Sprintf(qry, count)
+	rows, err := db.Query(qry)
+	if err != nil {
+		return nil, errorlib.NewInternalServerError(err.Error())
+	}
+	resultList := make([]*url_model.DomainCount, 0)
+	for rows.Next() {
+		var result url_model.DomainCount
+		err := rows.Scan(&result.DomainUrl, &result.ShortenedCount)
+		if err != nil {
+			return nil, errorlib.NewInternalServerError(err.Error())
+		}
+		resultList = append(resultList, &result)
+	}
+	return resultList, nil
 }

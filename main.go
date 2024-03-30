@@ -41,6 +41,7 @@ func main() {
 
 	routerGroup := router.Group("/public")
 	routerGroup.POST("/v1/shorten_url", url_controller.ShortenUrl)
+	routerGroup.GET("/v1/top_domains", url_controller.FindTopDomains)
 
 	err = router.Run("127.0.0.1:3000")
 	if err != nil {
