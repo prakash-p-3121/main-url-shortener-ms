@@ -37,7 +37,7 @@ func main() {
 	database.SetSingleStoreConnection(db)
 
 	router := gin.Default()
-	router.GET("/:encoded-url", url_controller.FindLongUrl)
+	router.GET("/:encoded-url", url_controller.RedirectToLongUrl)
 
 	routerGroup := router.Group("/public")
 	routerGroup.POST("/v1/shorten_url", url_controller.ShortenUrl)

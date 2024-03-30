@@ -11,10 +11,10 @@ func ShortenUrl(c *gin.Context) {
 	controller.ShortenUrl(ginRestCtx)
 }
 
-func FindLongUrl(c *gin.Context) {
+func RedirectToLongUrl(c *gin.Context) {
 	ginRestCtx := restlib.NewGinRestContext(c)
 	controller := NewUrlController()
-	controller.FindLongUrl(ginRestCtx)
+	controller.RedirectToLongUrl(ginRestCtx)
 }
 
 func FindTopDomains(c *gin.Context) {

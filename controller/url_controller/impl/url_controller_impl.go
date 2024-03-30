@@ -5,6 +5,7 @@ import (
 	"github.com/prakash-p-3121/main-url-shortener-ms/model/url_model"
 	"github.com/prakash-p-3121/main-url-shortener-ms/service/url_service"
 	"github.com/prakash-p-3121/restlib"
+	"net/http"
 	"strconv"
 )
 
@@ -37,7 +38,7 @@ func (controller *UrlControllerImpl) ShortenUrl(restCtx restlib.RestContext) {
 	restlib.OkResponse(ctx, resp)
 }
 
-func (controller *UrlControllerImpl) FindLongUrl(restCtx restlib.RestContext) {
+func (controller *UrlControllerImpl) RedirectToLongUrl(restCtx restlib.RestContext) {
 	ginRestCtx, ok := restCtx.(*restlib.GinRestContext)
 	if !ok {
 		internalServerErr := errorlib.NewInternalServerError("Expected GinRestContext")
@@ -56,7 +57,7 @@ func (controller *UrlControllerImpl) FindLongUrl(restCtx restlib.RestContext) {
 		appErr.SendRestResponse(ctx)
 		return
 	}
-	restlib.OkResponse(ctx, resp)
+	ctx.Redirect(http.StatusFound, resp.LongUrl)
 }
 
 func (controller *UrlControllerImpl) FindTopDomains(restCtx restlib.RestContext) {
