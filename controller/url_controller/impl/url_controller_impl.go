@@ -20,7 +20,7 @@ func (controller *UrlControllerImpl) ShortenUrl(restCtx restlib.RestContext) {
 	}
 
 	ctx := ginRestCtx.CtxGet()
-	var req url_model.ShortUrl
+	var req url_model.ShortenUrlReq
 	err := ctx.BindJSON(&req)
 	if err != nil {
 		badReqErr := errorlib.NewBadReqError("payload-serialization" + err.Error())
@@ -28,9 +28,14 @@ func (controller *UrlControllerImpl) ShortenUrl(restCtx restlib.RestContext) {
 		return
 	}
 
-	//controller.UrlService.ShortenUrl(&req)
-
+	resp, appErr := controller.UrlService.ShortenUrl(&req)
+	if appErr != nil {
+		appErr.SendRestResponse(ctx)
+		return
+	}
+	restlib.OkResponse(ctx, resp)
 }
+
 func (controller *UrlControllerImpl) FindLongUrl(ctx restlib.RestContext) {
 
 }

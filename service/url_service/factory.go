@@ -6,5 +6,5 @@ import (
 )
 
 func NewUrlService() UrlService {
-	return impl.UrlServiceImpl{UrlRepository: url_repository.NewUrlRepository()}
+	return &impl.UrlServiceImpl{UrlRepository: url_repository.NewUrlRepository()}
 }
