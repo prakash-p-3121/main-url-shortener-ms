@@ -26,6 +26,8 @@ require (
 	github.com/prakash-p-3121/database-clustermgt-client v0.0.6 // indirect
 	github.com/prakash-p-3121/database-clustermgt-model v0.0.7 // indirect
 	github.com/prakash-p-3121/errorlib v0.0.9 // indirect
+	github.com/prakash-p-3121/idgenclient v0.0.4 // indirect
+	github.com/prakash-p-3121/idgenmodel v0.0.3 // indirect
 	github.com/prakash-p-3121/mysqllib v0.0.18 // indirect
 	github.com/prakash-p-3121/restclientlib v0.0.4 // indirect
 	github.com/prakash-p-3121/restlib v0.0.11 // indirect

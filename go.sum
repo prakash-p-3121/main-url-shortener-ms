@@ -58,6 +58,10 @@ github.com/prakash-p-3121/database-clustermgt-model v0.0.7 h1:xLvVKxXV0RbOtbgjgF
 github.com/prakash-p-3121/database-clustermgt-model v0.0.7/go.mod h1:5xj6jFuege/cWqE1bOx8B0P4TkEk8DKLZRnEpUYNdU0=
 github.com/prakash-p-3121/errorlib v0.0.9 h1:FmXHkR1185LJBx6L/Nc70+CGQNBSgytmbEwyleSDInA=
 github.com/prakash-p-3121/errorlib v0.0.9/go.mod h1:9q5QI6qRlpLoHIvRLmQ58vYnj7bYt/qYoikNrRGzT/I=
+github.com/prakash-p-3121/idgenclient v0.0.4 h1:enUebAni6372NrrSL2mNMHXfUdSFhJNHnXtqbSOBAtM=
+github.com/prakash-p-3121/idgenclient v0.0.4/go.mod h1:mAuUOgm1+jRZRBeFdoekxu2PhZcxzx7cPqW8ooArWow=
+github.com/prakash-p-3121/idgenmodel v0.0.3 h1:HKYF2hJIjrFHGGcSMW/5dpG2vNSZ0TMumGdEJiyH56o=
+github.com/prakash-p-3121/idgenmodel v0.0.3/go.mod h1:bMCgB11ypDvYe3PC04Yo+u3nt+gVIDh62jUPSrHA/4w=
 github.com/prakash-p-3121/mysqllib v0.0.18 h1:0hFVfly4xjhaL3WI6db0DFdv2jZb/MnEng8RlfVljwM=
 github.com/prakash-p-3121/mysqllib v0.0.18/go.mod h1:gpjSYumstiESELA3PXihK0JJELB5oJcSWxsPoqhuSHE=
 github.com/prakash-p-3121/restclientlib v0.0.4 h1:bVAkz5Vgy7w4BkqmFC36WLtFa5hRdYiBGjDg/TjCXAo=
