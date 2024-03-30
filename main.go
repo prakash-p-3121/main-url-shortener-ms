@@ -37,12 +37,12 @@ func main() {
 	database.SetSingleStoreConnection(db)
 
 	router := gin.Default()
-	router.GET("/:encoded-cipher", url_controller.FindLongUrl)
+	router.GET("/:encoded-url", url_controller.FindLongUrl)
 
 	routerGroup := router.Group("/public")
 	routerGroup.POST("/v1/shorten_url", url_controller.ShortenUrl)
 
-	err = router.Run("127.0.0.1:3004")
+	err = router.Run("127.0.0.1:3000")
 	if err != nil {
 		panic("Error Starting main url shortener ms")
 	}

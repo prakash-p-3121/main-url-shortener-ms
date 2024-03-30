@@ -10,7 +10,7 @@ var singleStoreDatabaseConnection *sql.DB
 
 const (
 	ShortUrlsTable               string = "short_urls"
-	LongToShortUrlsMappingsTable string = "long_to_short_urls_mappings"
+	LongToShortUrlsMappingsTable string = "long_to_short_url_mappings"
 	DomainShorteningCountsTable  string = "domain_shortening_counts"
 )
 
@@ -31,5 +31,5 @@ func GetSingleStoreConnection() *sql.DB {
 }
 
 func GetShardedTableList() []string {
-	return []string{ShortUrlsTable, LongToShortUrlsMappingsTable, DomainShorteningCountsTable}
+	return []string{ShortUrlsTable, LongToShortUrlsMappingsTable}
 }

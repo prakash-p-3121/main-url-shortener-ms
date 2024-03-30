@@ -44,7 +44,7 @@ func (controller *UrlControllerImpl) FindLongUrl(restCtx restlib.RestContext) {
 		return
 	}
 	ctx := ginRestCtx.CtxGet()
-	shortUrlEncHash := ctx.Param("url-hash")
+	shortUrlEncHash := ctx.Param("encoded-url")
 	if restlib.TrimAndCheckForEmptyString(&shortUrlEncHash) {
 		badReqErr := errorlib.NewBadReqError("url-hash-empty")
 		badReqErr.SendRestResponse(ctx)

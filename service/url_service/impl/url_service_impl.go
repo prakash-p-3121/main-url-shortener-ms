@@ -1,11 +1,9 @@
 package impl
 
 import (
-	"crypto/aes"
-	"crypto/cipher"
 	"crypto/md5"
-	"crypto/rand"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -25,8 +23,7 @@ type UrlServiceImpl struct {
 }
 
 const (
-	shortUrlDomain    string = "https://infra.cloud/"
-	encryptDecryptKey string = "HelloWorld@123"
+	shortUrlDomain string = "http://localhost:3000/"
 )
 
 func (service *UrlServiceImpl) ShortenUrl(req *url_model.ShortenUrlReq) (*url_model.ShortenUrlResp, errorlib.AppError) {
@@ -55,8 +52,10 @@ func (service *UrlServiceImpl) ShortenUrl(req *url_model.ShortenUrlReq) (*url_mo
 		}
 	}
 	if shortUrlFound {
+		log.Println("shortUrlFound=true")
 		return &url_model.ShortenUrlResp{ShortUrl: shortUrl.ShortUrl}, nil
 	}
+	log.Println("ShortUrl NotFound")
 
 	idGenMSCfg, err := cfg.GetMsConnectionCfg("idgenms")
 	if err != nil {
@@ -69,23 +68,33 @@ func (service *UrlServiceImpl) ShortenUrl(req *url_model.ShortenUrlReq) (*url_mo
 		return nil, appErr
 	}
 
+	/*
+		     	Short URL Generation Algorithm
+				1. Compute Long Url Hash
+			    2. Build (ShortUrlID, LongUrlHash) JSON
+			    3. Base64 URL Encode JSON
+
+	*/
+
 	urlHash, err := service.computeHash(req.LongUrl)
 	if err != nil {
 		return nil, errorlib.NewInternalServerError("compute-short-url-err=" + err.Error())
 	}
-
-	shortUrlResp, appErr := service.buildShortUrl(shortUrl)
-	if appErr != nil {
-		return nil, appErr
-	}
+	log.Println("url_hash=" + urlHash)
 
 	shortUrl = &url_model.ShortUrl{
 		ID:          resp.ID,
 		IDBitCount:  uint64(resp.BitCount),
 		LongUrl:     *req.LongUrl,
 		LongUrlHash: urlHash,
-		ShortUrl:    shortUrlResp.ShortUrl,
 	}
+	shortUrlResp, appErr := service.buildShortUrl(shortUrl)
+	if appErr != nil {
+		return nil, appErr
+	}
+
+	shortUrl.ShortUrl = shortUrlResp.ShortUrl
+	log.Println("shortUrl=", shortUrl.ShortUrl)
 
 	shardPtr, appErr := client.FindShard(database.ShortUrlsTable, resp.ID)
 	if appErr != nil {
@@ -97,15 +106,41 @@ func (service *UrlServiceImpl) ShortenUrl(req *url_model.ShortenUrlReq) (*url_mo
 		return nil, appErr
 	}
 
+	trimmedLongUrl := service.findLongUrlShardKey(req.LongUrl)
+	shardPtr, appErr = client.FindShard(database.LongToShortUrlsMappingsTable, trimmedLongUrl)
+	if appErr != nil {
+		return nil, appErr
+	}
+
+	appErr = service.UrlRepository.CreateLongUrlToShortUrlIDMapping(shardPtr.ID,
+		&shortUrl.LongUrl,
+		&shortUrl.ID)
+	if appErr != nil {
+		return nil, appErr
+	}
+
 	return shortUrlResp, nil
+}
+
+func (service *UrlServiceImpl) findLongUrlShardKey(longUrl *string) string {
+	var cutPrefixes []string = []string{"https://www.", "http://www.", "https://", "http://"}
+	var trimmedLongUrl string = *longUrl
+	var exists bool
+	for _, cutPrefix := range cutPrefixes {
+		trimmedLongUrl, exists = strings.CutPrefix(*longUrl, cutPrefix)
+		if exists {
+			break
+		}
+	}
+	return trimmedLongUrl
 }
 
 func (service *UrlServiceImpl) findShortUrlByLongUrl(client database_clustermgt_client.DatabaseClusterMgtClient,
 	longUrl *string) (*url_model.ShortUrl, errorlib.AppError) {
-	trimmedLongUrl, exists := strings.CutPrefix(*longUrl, "https://www.")
-	if !exists {
-		trimmedLongUrl, _ = strings.CutPrefix(*longUrl, "http://www.")
-	}
+
+	trimmedLongUrl := service.findLongUrlShardKey(longUrl)
+
+	log.Println("findShortUrlByLongUrl:trimmedLongUrl=", trimmedLongUrl)
 	shardPtr, appErr := client.FindShard(database.LongToShortUrlsMappingsTable, trimmedLongUrl)
 	if appErr != nil {
 		return nil, appErr
@@ -115,6 +150,8 @@ func (service *UrlServiceImpl) findShortUrlByLongUrl(client database_clustermgt_
 		return nil, appErr
 	}
 
+	log.Println("findShortUrlByLongUrl:shortUrlID=", shortUrlID)
+
 	shardPtr, appErr = client.FindShard(database.ShortUrlsTable, shortUrlID)
 	if appErr != nil {
 		return nil, appErr
@@ -123,6 +160,8 @@ func (service *UrlServiceImpl) findShortUrlByLongUrl(client database_clustermgt_
 	if appErr != nil {
 		return nil, appErr
 	}
+	log.Println("findShortUrlByLongUrl:shortUrl=", shortUrl.ID)
+
 	return shortUrl, nil
 }
 
@@ -133,7 +172,7 @@ func (service *UrlServiceImpl) computeHash(longUrl *string) (string, error) {
 		return "", err
 	}
 	hash := hasher.Sum(nil)
-	return string(hash), nil
+	return hex.EncodeToString(hash), nil
 }
 
 func (service *UrlServiceImpl) buildShortUrl(shortUrl *url_model.ShortUrl) (*url_model.ShortenUrlResp, errorlib.AppError) {
@@ -147,50 +186,33 @@ func (service *UrlServiceImpl) buildShortUrl(shortUrl *url_model.ShortUrl) (*url
 		return nil, errorlib.NewInternalServerError(err.Error())
 	}
 
-	cipherText, appErr := service.encrypt(jsonData)
-	if appErr != nil {
-		return nil, appErr
-	}
-	urlEncodedStr := base64.URLEncoding.EncodeToString(cipherText)
-	log.Println("url_encoded_str=", urlEncodedStr)
-	shortUrlStr := fmt.Sprintf(shortUrlDomain+"%s", urlEncodedStr)
+	urlEncStr := base64.URLEncoding.EncodeToString([]byte(jsonData))
+	log.Println("UrlEncoded Str=", urlEncStr)
+
+	shortUrlStr := fmt.Sprintf(shortUrlDomain+"%s", urlEncStr)
 	return &url_model.ShortenUrlResp{ShortUrl: shortUrlStr}, nil
 }
 
-func (service *UrlServiceImpl) encrypt(jsonData []byte) ([]byte, errorlib.AppError) {
-	iv := make([]byte, aes.BlockSize) // Random initialization vector
-	_, err := rand.Read(iv)
-	if err != nil {
-		return nil, errorlib.NewInternalServerError(err.Error())
-	}
-
-	block, err := aes.NewCipher([]byte(encryptDecryptKey))
-	if err != nil {
-		return nil, errorlib.NewInternalServerError(err.Error())
-	}
-
-	gcm, err := cipher.NewGCM(block)
-	if err != nil {
-		return nil, errorlib.NewInternalServerError(err.Error())
-	}
-	plainText := jsonData
-	cipherText := gcm.Seal(nil, iv, plainText, nil)
-	log.Println("cipherText=", cipherText)
-	return cipherText, nil
-}
-
 func (service *UrlServiceImpl) FindLongUrl(encodedShortUrl *string) (*url_model.FindLongUrlResp, errorlib.AppError) {
-	cipherText, err := base64.URLEncoding.DecodeString(*encodedShortUrl)
+
+	/*
+		Long URL Finding Algorithm
+
+		1. Base64 URL Decode JSON
+		2. JSON to Components Struct
+		3. Access database to find the Long URL
+
+	*/
+
+	log.Println("EncodedShortUrl=", encodedShortUrl)
+
+	jsonStr, err := base64.URLEncoding.DecodeString(*encodedShortUrl)
 	if err != nil {
 		return nil, errorlib.NewInternalServerError(err.Error())
 	}
-	cipherStr := string(cipherText)
-	plainText, appErr := service.decrypt(&cipherStr)
-	if appErr != nil {
-		return nil, appErr
-	}
+
 	var components url_model.ShortUrlComponents
-	err = json.Unmarshal(plainText, &components)
+	err = json.Unmarshal(jsonStr, &components)
 	if err != nil {
 		return nil, errorlib.NewInternalServerError(err.Error())
 	}
@@ -212,32 +234,11 @@ func (service *UrlServiceImpl) FindLongUrl(encodedShortUrl *string) (*url_model.
 	if appErr != nil {
 		return nil, appErr
 	}
+
 	if shortUrl.LongUrlHash != components.UrlHash {
 		return nil, errorlib.NewNotFoundError("long-url")
 	}
 	resp := url_model.FindLongUrlResp{LongUrl: shortUrl.LongUrl}
+
 	return &resp, nil
-}
-
-func (service *UrlServiceImpl) decrypt(cipherStr *string) ([]byte, errorlib.AppError) {
-	cipherText := *cipherStr
-	iv := cipherText[:aes.BlockSize] // Extract initialization vector (IV)
-	cipherText = cipherText[aes.BlockSize:]
-
-	block, err := aes.NewCipher([]byte(encryptDecryptKey))
-	if err != nil {
-		return nil, errorlib.NewInternalServerError(err.Error())
-	}
-
-	gcm, err := cipher.NewGCM(block)
-	if err != nil {
-		return nil, errorlib.NewInternalServerError(err.Error())
-	}
-
-	plainText, err := gcm.Open(nil, []byte(iv), []byte(cipherText), nil)
-	if err != nil {
-		return nil, errorlib.NewInternalServerError(err.Error())
-	}
-	log.Println("decrypted plain text=", plainText)
-	return plainText, nil
 }

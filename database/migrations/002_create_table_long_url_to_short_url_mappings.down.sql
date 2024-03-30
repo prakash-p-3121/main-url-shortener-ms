@@ -1,0 +1,1 @@
+DROP TABLE long_to_short_url_mappings;

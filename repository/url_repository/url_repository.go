@@ -7,6 +7,7 @@ import (
 
 type UrlRepository interface {
 	CreateShortUrl(shardID *int64, req *url_model.ShortUrl) errorlib.AppError
+	CreateLongUrlToShortUrlIDMapping(shardID *int64, longUrl, shortUrlID *string) errorlib.AppError
 	FindShortUrlIDByLongUrl(shardID *int64, longUrl *string) (string, errorlib.AppError)
 	FindShortUrlByID(shardID *int64, shortUrlID string) (*url_model.ShortUrl, errorlib.AppError)
 }

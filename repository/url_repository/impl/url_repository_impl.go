@@ -6,6 +6,7 @@ import (
 	"github.com/prakash-p-3121/errorlib"
 	"github.com/prakash-p-3121/main-url-shortener-ms/model/url_model"
 	"github.com/prakash-p-3121/mysqllib"
+	"log"
 	"sync"
 )
 
@@ -18,8 +19,23 @@ func (repository *UrlRepositoryImpl) CreateShortUrl(shardID *int64, req *url_mod
 	if err != nil {
 		return errorlib.NewInternalServerError(err.Error())
 	}
+	log.Println("SHORT_URL_RECORD=", *req)
 	qry := `INSERT INTO short_urls (id, id_bit_count, long_url, long_url_hash, short_url) VALUES (?, ?, ?, ?, ?);`
 	_, err = db.Exec(qry, req.ID, req.IDBitCount, req.LongUrl, req.LongUrlHash, req.ShortUrl)
+	if err != nil {
+		return errorlib.NewInternalServerError(err.Error())
+	}
+	return nil
+}
+
+func (repository *UrlRepositoryImpl) CreateLongUrlToShortUrlIDMapping(shardID *int64, longUrl, shortUrlID *string) errorlib.AppError {
+	db, err := mysqllib.RetrieveShardConnectionByShardID(repository.ShardConnectionsMap, *shardID)
+	if err != nil {
+		return errorlib.NewInternalServerError(err.Error())
+	}
+	qry := `INSERT INTO long_to_short_url_mappings (long_url, short_url_id) SELECT ?, ? WHERE NOT 
+    		EXISTS ( SELECT 1 FROM long_to_short_url_mappings WHERE long_url = ? ); `
+	_, err = db.Exec(qry, *longUrl, *shortUrlID, *longUrl)
 	if err != nil {
 		return errorlib.NewInternalServerError(err.Error())
 	}
@@ -50,7 +66,6 @@ func (repository *UrlRepositoryImpl) FindShortUrlByID(shardID *int64, shortUrlID
 	if err != nil {
 		return nil, errorlib.NewInternalServerError(err.Error())
 	}
-
 	qry := `SELECT id, id_bit_count, long_url, long_url_hash, short_url, created_at FROM short_urls WHERE id=?;`
 	row := db.QueryRow(qry, shortUrlID)
 	var shortUrl url_model.ShortUrl

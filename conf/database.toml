@@ -2,4 +2,4 @@ host="127.0.0.1"
 port=3306
 user-name="root"
 password="root"
-database-name="productmgtms"
+database-name="url_shortening_ms"
