@@ -4,7 +4,6 @@ import (
 	"crypto/md5"
 	"encoding/base64"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
 	database_clustermgt_client "github.com/prakash-p-3121/database-clustermgt-client"
@@ -72,7 +71,7 @@ func (service *UrlServiceImpl) ShortenUrl(req *url_model.ShortenUrlReq) (*url_mo
 	/*
 		     	Short URL Generation Algorithm
 				1. Compute Long Url Hash
-			    2. Build (ShortUrlID, LongUrlHash) JSON
+			    2. Build (ShortUrlID, LongUrlHash) CSV
 			    3. Base64 URL Encode JSON
 
 	*/
@@ -194,17 +193,8 @@ func (service *UrlServiceImpl) computeHash(longUrl *string) (string, error) {
 }
 
 func (service *UrlServiceImpl) buildShortUrl(shortUrl *url_model.ShortUrl) (*url_model.ShortenUrlResp, errorlib.AppError) {
-	components := url_model.ShortUrlComponents{
-		ID:      shortUrl.ID,
-		UrlHash: shortUrl.LongUrlHash,
-	}
-	jsonData, err := json.Marshal(components)
-	if err != nil {
-		fmt.Println("Error marshalling JSON:", err)
-		return nil, errorlib.NewInternalServerError(err.Error())
-	}
-
-	urlEncStr := base64.URLEncoding.EncodeToString([]byte(jsonData))
+	shortUrlCombinedCmpnts := fmt.Sprintf("%s,%s", shortUrl.ID, shortUrl.LongUrlHash)
+	urlEncStr := base64.URLEncoding.EncodeToString([]byte(shortUrlCombinedCmpnts))
 	log.Println("UrlEncoded Str=", urlEncStr)
 
 	shortUrlStr := fmt.Sprintf(shortUrlDomain+"%s", urlEncStr)
@@ -216,24 +206,26 @@ func (service *UrlServiceImpl) FindLongUrl(encodedShortUrl *string) (*url_model.
 	/*
 		Long URL Finding Algorithm
 
-		1. Base64 URL Decode JSON
-		2. JSON to Components Struct
+		1. Base64 URL Decode
+		2. CSV Components  to Struct
 		3. Access database to find the Long URL
 
 	*/
 
 	log.Println("EncodedShortUrl=", encodedShortUrl)
 
-	jsonStr, err := base64.URLEncoding.DecodeString(*encodedShortUrl)
+	csvUrl, err := base64.URLEncoding.DecodeString(*encodedShortUrl)
 	if err != nil {
 		return nil, errorlib.NewInternalServerError(err.Error())
 	}
 
 	var components url_model.ShortUrlComponents
-	err = json.Unmarshal(jsonStr, &components)
-	if err != nil {
-		return nil, errorlib.NewInternalServerError(err.Error())
-	}
+	componentList := strings.SplitN(string(csvUrl), ",", 2)
+	components.ID = componentList[0]
+	components.UrlHash = componentList[1]
+
+	log.Println("Components###")
+	log.Println(components)
 
 	databaseClstrMgtMsCfg, err := cfg.GetMsConnectionCfg("database-clustermgt-ms")
 	if err != nil {
