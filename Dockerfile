@@ -18,6 +18,7 @@ WORKDIR /app
 RUN mkdir /app/conf
 # Copy binary and conf files
 COPY --from=builder /app/main-url-shortener-ms /app/main-url-shortener-ms
+RUN chmod 777 /app/main-url-shortener-ms
 COPY --from=builder /app/conf/database.toml /app/conf/database.toml
 COPY --from=builder /app/conf/microservice.toml /app/conf/microservice.toml
 
@@ -27,4 +28,4 @@ EXPOSE 3000
 
 
 # Define the command to run the application
-CMD ["main-url-shortener-ms"]
+CMD ["/app/main-url-shortener-ms"]
