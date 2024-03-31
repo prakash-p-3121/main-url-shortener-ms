@@ -46,15 +46,15 @@ The web app uses Single Store and Sharded MySQL for data storage.
     ```
     
 
-4. Create tables   
+3. Create tables   
     3.1 Create tables from idgenms in SingleStore   
     3.2 Create tables from database-clustermgt-ms in SingleStore   
     3.3 Create tables from main-url-shortener-ms in all MySQL Shards and domain_shortening_counts table in SingleStore   
 
 
-5. Start idgenms, database-clustermgt-ms and main-url-shortener-ms in the same order as mentioned below   
+4. Start idgenms, database-clustermgt-ms and main-url-shortener-ms in the same order as mentioned below   
 
-    5.1 Start idgenms
+    4.1 Start idgenms
     
         ```bash
         sudo docker pull prakashp92/idgenms:latest
@@ -70,7 +70,7 @@ The web app uses Single Store and Sharded MySQL for data storage.
    
    
     
-    5.2 Start database-clustermgt-ms
+    4.2 Start database-clustermgt-ms
     
         ```bash
         sudo docker pull prakashp92/database-clustermgt-ms:latest
@@ -86,18 +86,15 @@ The web app uses Single Store and Sharded MySQL for data storage.
    
    
     
-    5.3 Start main-url-shortener-ms
+    4.3 Start main-url-shortener-ms
     
-        ```bash
+        ```bash  
         sudo docker pull prakashp92/main-url-shortener-ms:latest
-   
         ```    
 
         Execute main-url-shortener-ms
        
-        ```bash
-   
+        ```bash  
         sudo docker run -it -p 3000:3000 --name main_url_shortener_ms1 prakashp92/main-url-shortener-ms:latest
-   
         ````   
    
