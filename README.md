@@ -56,45 +56,42 @@ The web app uses Single Store and Sharded MySQL for data storage.
 
     4.1 Start idgenms
     
-        ```bash
-        sudo docker pull prakashp92/idgenms:latest
-   
-        ```
+    ```bash
+    sudo docker pull prakashp92/idgenms:latest
+    ```
 
-        Execute idgenms
-   
-        ```bash
-        sudo docker run -it -p 3001:3001 --name idgenms1 prakashp92/idgenms:latest
-   
-        ```
+    Execute idgenms
+
+    ```bash
+    sudo docker run -it -p 3001:3001 --name idgenms1 prakashp92/idgenms:latest
+    ```
    
    
     
     4.2 Start database-clustermgt-ms
     
-        ```bash
-        sudo docker pull prakashp92/database-clustermgt-ms:latest
-   
-        ```
+    ```bash
+    sudo docker pull prakashp92/database-clustermgt-ms:latest
+    ```
 
-        Execute database-clustermgt-ms
-   
-        ```bash
-        sudo docker run -it -p 3002:3002 --name clustermgtms1 prakashp92/database-clustermgt-ms:latest
-   
-        ```
+    Execute database-clustermgt-ms
+
+    ```bash
+    sudo docker run -it -p 3002:3002 --name clustermgtms1 prakashp92/database-clustermgt-ms:latest
+
+    ```
    
    
     
     4.3 Start main-url-shortener-ms
     
-        ```bash  
-        sudo docker pull prakashp92/main-url-shortener-ms:latest
-        ```    
+    ```bash  
+    sudo docker pull prakashp92/main-url-shortener-ms:latest
+    ```    
 
-        Execute main-url-shortener-ms
-       
-        ```bash  
-        sudo docker run -it -p 3000:3000 --name main_url_shortener_ms1 prakashp92/main-url-shortener-ms:latest
-        ````   
+    Execute main-url-shortener-ms
+   
+    ```bash  
+    sudo docker run -it -p 3000:3000 --name main_url_shortener_ms1 prakashp92/main-url-shortener-ms:latest
+    ````   
    
