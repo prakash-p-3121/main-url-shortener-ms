@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Define default variables (customize as needed)
+
 IMAGE_NAME="prakashp92/main-url-shortener-ms"
 IMAGE_TAG="latest"
 
