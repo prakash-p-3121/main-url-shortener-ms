@@ -90,8 +90,10 @@ The web app uses Single Store and Sharded MySQL for data storage.
     ```    
 
     Execute main-url-shortener-ms
+
    
     ```bash  
     sudo docker run -it -p 3000:3000 --name main_url_shortener_ms1 prakashp92/main-url-shortener-ms:latest
     ````   
-   
+
+Now, the web app is ready to answer to REST requests!
